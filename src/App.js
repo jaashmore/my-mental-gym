@@ -348,15 +348,12 @@ const courseData = {
 };
 
 // --- Firebase Configuration ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {const firebaseConfig = {
-  apiKey: "AIzaSyAYQglzGXHF7kK-G1EDK3A-9POVfIS3F58",
-  authDomain: "my-mental-gym.firebaseapp.com",
-  projectId: "my-mental-gym",
-  storageBucket: "my-mental-gym.firebasestorage.app",
-  messagingSenderId: "764179859851",
-  appId: "1:764179859851:web:9fa3abe8b7dedfee21c78e"
-},};
+// This will be replaced by your actual Firebase config in your local project
+// eslint-disable-next-line no-undef
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// eslint-disable-next-line no-undef
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'mental-gym';
+
 
 // --- Helper Functions ---
 const formatTime = (time24) => {
@@ -459,6 +456,7 @@ export default function App() {
             } else {
                 const initialData = {
                     email: user.email,
+                    displayName: user.displayName,
                     createdAt: new Date().toISOString(),
                     hasSeenIntro: false,
                     progress: { week: 1, day: 0 },

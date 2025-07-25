@@ -384,6 +384,8 @@ export default function App() {
     const [auth, setAuth] = useState(null);
     const [db, setDb] = useState(null);
     const [user, setUser] = useState(null);
+    const [authReady, setAuthReady] = useState(false);
+
 
     // Memoize Firebase services
     const { app } = useMemo(() => {
@@ -410,9 +412,7 @@ export default function App() {
 
         const unsubscribeAuth = onAuthStateChanged(authInstance, (currentUser) => {
             setUser(currentUser);
-            if (!currentUser) {
-                setView('login');
-            }
+            setAuthReady(true); // Firebase has checked for a user
         });
         
         return () => unsubscribeAuth();
@@ -420,7 +420,7 @@ export default function App() {
 
     // --- Data Fetching and View Routing ---
     useEffect(() => {
-        if (!db || !user) return;
+        if (!authReady || !db || !user) return;
 
         const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
 
@@ -428,7 +428,8 @@ export default function App() {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setUserData({
-                    progress: data.progress || { week: 1, day: 0 }
+                    progress: data.progress || { week: 1, day: 0 },
+                    hasSeenIntro: data.hasSeenIntro || false
                 });
                 setPaymentStatus(data.paymentStatus || { block2: false, block3: false, gamePlanUnlocked: false });
                 setJournalEntries(data.journalEntries || {});
@@ -445,14 +446,13 @@ export default function App() {
                     }
                 }
                 setIsNextDayAvailable(isAvailable);
-
-                if (view === 'loading' || view === 'login' || view === 'signup') {
-                    if (data.hasSeenIntro) {
-                        setView('dashboard');
-                    } else {
-                        setView('introduction');
-                    }
+                
+                if (data.hasSeenIntro) {
+                    setView('dashboard');
+                } else {
+                    setView('introduction');
                 }
+
             } else {
                 const initialData = {
                     email: user.email,
@@ -467,12 +467,7 @@ export default function App() {
                     lastCompletionTimestamp: null,
                 };
                 setDoc(userDocRef, initialData).then(() => {
-                    setUserData({ progress: initialData.progress });
-                    setPaymentStatus(initialData.paymentStatus);
-                    setJournalEntries(initialData.journalEntries);
-                    setGamePlan(initialData.gamePlan);
-                    setReminders(initialData.reminders);
-                    setIsNextDayAvailable(true);
+                    // State will be updated by the snapshot listener automatically
                     setView('introduction');
                 }).catch(e => console.error("Error creating user doc:", e));
             }
@@ -482,7 +477,7 @@ export default function App() {
         });
 
         return () => unsubscribeSnapshot();
-    }, [db, user]);
+    }, [authReady, db, user]);
     
     // --- Reminder Check Logic ---
     useEffect(() => {
@@ -671,7 +666,9 @@ export default function App() {
 
     // --- Render Logic ---
     const renderView = () => {
-        if (view === 'loading') return <LoadingScreen />;
+        if (!authReady || (user && !userData)) {
+            return <LoadingScreen />;
+        }
         if (view === 'error') return <ErrorScreen />;
         
         if (!user) {
@@ -1307,5 +1304,6 @@ const ReminderAlertModal = ({ onClose }) => (
         </div>
     </div>
 );
+
 
 

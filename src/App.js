@@ -420,7 +420,11 @@ export default function App() {
 
     // --- Data Fetching and View Routing ---
     useEffect(() => {
-        if (!authReady || !db || !user) return;
+        if (!authReady) return; // Wait until auth state is confirmed
+        if (!db || !user) {
+            setView('login'); // If no user after auth is ready, show login
+            return;
+        }
 
         const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
 
@@ -447,10 +451,10 @@ export default function App() {
                 }
                 setIsNextDayAvailable(isAvailable);
                 
-                if (data.hasSeenIntro) {
-                    setView('dashboard');
-                } else {
+                if (!data.hasSeenIntro) {
                     setView('introduction');
+                } else {
+                    setView('dashboard');
                 }
 
             } else {
@@ -466,10 +470,9 @@ export default function App() {
                     reminders: [],
                     lastCompletionTimestamp: null,
                 };
-                setDoc(userDocRef, initialData).then(() => {
-                    // State will be updated by the snapshot listener automatically
-                    setView('introduction');
-                }).catch(e => console.error("Error creating user doc:", e));
+                setDoc(userDocRef, initialData)
+                    .catch(e => console.error("Error creating user doc:", e));
+                // Snapshot will re-trigger with the new data, setting the view to introduction
             }
         }, (error) => {
             console.error("Error with Firestore snapshot:", error);
@@ -1304,6 +1307,7 @@ const ReminderAlertModal = ({ onClose }) => (
         </div>
     </div>
 );
+
 
 
 
